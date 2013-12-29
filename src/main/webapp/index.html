@@ -1,0 +1,95 @@
+<html>
+<meta charset="UTF-8">
+<head>
+    <style>
+        .grid { display: -webkit-flex; display: flex; }
+        .bottom{-webkit-align-items: flex-end;}
+        .col {padding: 0 10px; }
+         dl { margin :0; width: 100px; }
+        .fluid { flex: 1;}
+        .rightal{ text-align: right;}
+
+    </style>
+</head>
+
+<body>
+
+<h2>EURUSD</h2>
+<div><span data-bind="text: eurusd().bid"></span> (<span data-bind="text: eurusd().totalBidVolume"></span>) /
+    <span data-bind="text: eurusd().ask"></span> (<span data-bind="text: eurusd().totalAskVolume"></span>)
+</div>
+
+<div class="grid" style="max-width: 700px;">
+
+    <div class="col fluid grid"   style="margin-top: 300px;">
+        <dl data-bind="foreach: eurusd().askVolumes" class="col-inner fluid">
+            <dd><span data-bind="text: $data"></span></dd>
+        </dl>
+        <dl data-bind="foreach: eurusd().asks" class="col-inner fluid">
+            <dd><span data-bind="text: $data.toFixed(5)"></span></dd>
+        </dl>
+    </div>
+    <div class="col fluid grid bottom"  style="height: 300px;">
+        <dl data-bind="foreach: eurusd().bids" class="col-inner fluid">
+            <dd><span data-bind="text: $data.toFixed(5)"></span></dd>
+        </dl>
+        <dl data-bind="foreach: eurusd().bidVolumes" class="col-inner fluid">
+            <dd><span data-bind="text: $data"></span></dd>
+        </dl>
+    </div>
+</div>
+<div id=time></div>
+
+<script type="text/javascript" src="http://knockoutjs.com/downloads/knockout-3.0.0.js"></script>
+
+
+<script type="text/javascript">
+//var host = "http://a.cyril.eu.cloudbees.net";
+var host="http://localhost:8080";
+var ticks = {
+    eurusd:{}
+};
+
+function ViewModel() {
+    var dummy = ko.observable();
+
+    this.eurusd = ko.computed(function() {
+        dummy();
+        return ticks.eurusd;
+    }, this);
+
+    this.update = function() {
+        dummy.notifySubscribers();
+    };
+}
+var myViewModel = new ViewModel();
+ko.applyBindings(myViewModel);
+
+
+//ws
+var ws = new WebSocket( host.replace("http", "ws")+"/ticks" );
+ws.onopen = function (event) {
+	console.log("open",event);
+	//ws.send(JSON.stringify(['subscribe', '', ['ticks']])); //send live subscriptions here
+};
+ws.onclose = function (event) {
+  console.log("close",event);
+};
+ws.onerror = function (event) {
+  console.log("error",event);
+};
+
+ws.onmessage = function (event) {
+   //console.log(event.data);
+   var d = JSON.parse(event.data);
+   ticks.eurusd = d;
+   myViewModel.update();
+};
+setInterval(function(){ ws.send('ping'); },100000);
+
+
+
+
+</script>
+</body>
+</html>
